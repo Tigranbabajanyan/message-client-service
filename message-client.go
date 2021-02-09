@@ -6,8 +6,8 @@ import (
 )
 
 type MessageClient interface {
-	PublishOnQueue(message []byte, queueName string)
-	SubscribeToQueue(queueName string, consumerName string, handleFunc func(delivery amqp.Delivery))
+	PublishOnQueue(message []byte, queueName string) error
+	SubscribeToQueue(queueName string, consumerName string, handleFunc func(delivery amqp.Delivery)) error
 }
 
 type messageClient struct {
@@ -21,12 +21,10 @@ func NewMessageClient(rabbitMQ *amqp.Connection) MessageClient {
 		log.Fatalf("%s: %s", "Failed to open a channel", err)
 	}
 
-	defer channel.Close()
-
 	return messageClient{channel: channel}
 }
 
-func (client messageClient) PublishOnQueue(message []byte, queueName string) {
+func (client messageClient) PublishOnQueue(message []byte, queueName string) error {
 	queue, err := client.channel.QueueDeclare(
 		queueName, // name
 		false,     // durable
@@ -37,8 +35,7 @@ func (client messageClient) PublishOnQueue(message []byte, queueName string) {
 	)
 
 	if err != nil {
-		log.Fatalf("%s: %s", "Failed to declare a queue", err)
-		return
+		return err
 	}
 
 	err = client.channel.Publish(
@@ -51,12 +48,10 @@ func (client messageClient) PublishOnQueue(message []byte, queueName string) {
 			Body:        message,
 		})
 
-	if err != nil {
-		println(err)
-	}
+	return err
 }
 
-func (client messageClient) SubscribeToQueue(queueName string, consumerName string, handleFunc func(delivery amqp.Delivery)) {
+func (client messageClient) SubscribeToQueue(queueName string, consumerName string, handleFunc func(delivery amqp.Delivery)) error {
 	msgs, err := client.channel.Consume(
 		queueName,    // queue
 		consumerName, // consumer
@@ -68,7 +63,7 @@ func (client messageClient) SubscribeToQueue(queueName string, consumerName stri
 	)
 
 	if err != nil {
-		log.Fatalf("%s: %s", "Failed to register a consumer", err)
+		return err
 	}
 
 	go func(handleFunc func(delivery amqp.Delivery)) {
@@ -76,4 +71,6 @@ func (client messageClient) SubscribeToQueue(queueName string, consumerName stri
 			handleFunc(d)
 		}
 	}(handleFunc)
+
+	return nil
 }
