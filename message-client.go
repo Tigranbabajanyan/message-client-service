@@ -56,7 +56,7 @@ func (client messageClient) PublishOnTopic(message []byte, exchangeName, routing
 	err := client.channel.ExchangeDeclare(
 		exchangeName, // name
 		"topic",      // type
-		true,         // durable
+		false,        // durable
 		false,        // auto-deleted
 		false,        // internal
 		false,        // no-wait
