@@ -23,7 +23,7 @@ func TestPublishOnQueue(t *testing.T) {
 	}
 }
 
-func TestPublishOnExchange(t *testing.T) {
+func TestPublishOnTopic(t *testing.T) {
 
 	conn := setupRabbitMQ()
 
@@ -32,7 +32,7 @@ func TestPublishOnExchange(t *testing.T) {
 	testData := "some test string"
 	data, _ := json.Marshal(testData)
 
-	err := client.PublishOnExchange(data, "", "test.message")
+	err := client.PublishOnTopic(data, "test", "test.message")
 
 	if err != nil {
 		t.Fatal(err)

@@ -7,7 +7,7 @@ import (
 
 type MessageClient interface {
 	PublishOnQueue(message []byte, queueName string) error
-	PublishOnExchange(message []byte, exchangeName, routingKey string) error
+	PublishOnTopic(message []byte, exchangeName, routingKey string) error
 	SubscribeToQueue(queueName string, consumerName string, handleFunc func(delivery amqp.Delivery)) error
 }
 
@@ -52,8 +52,22 @@ func (client messageClient) PublishOnQueue(message []byte, queueName string) err
 	return err
 }
 
-func (client messageClient) PublishOnExchange(message []byte, exchangeName, routingKey string) error {
-	err := client.channel.Publish(
+func (client messageClient) PublishOnTopic(message []byte, exchangeName, routingKey string) error {
+	err := client.channel.ExchangeDeclare(
+		exchangeName, // name
+		"topic",      // type
+		true,         // durable
+		false,        // auto-deleted
+		false,        // internal
+		false,        // no-wait
+		nil,          // arguments
+	)
+
+	if err != nil {
+		return err
+	}
+
+	err = client.channel.Publish(
 		exchangeName, // exchange
 		routingKey,   // routing key
 		false,        // mandatory
