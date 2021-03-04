@@ -32,7 +32,14 @@ func TestPublishOnTopic(t *testing.T) {
 	testData := "some test string"
 	data, _ := json.Marshal(testData)
 
-	err := client.PublishOnTopic(data, "test", "test.message")
+	err := client.PublishOnExchange(data, &ExchangeDeclare{
+		Name:       "test",
+		Kind:       "topic",
+		Durable:    true,
+		AutoDelete: false,
+		Internal:   false,
+		noWait:     false,
+	}, "test.message")
 
 	if err != nil {
 		t.Fatal(err)

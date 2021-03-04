@@ -7,7 +7,7 @@ import (
 
 type MessageClient interface {
 	PublishOnQueue(message []byte, queueName string) error
-	PublishOnTopic(message []byte, exchangeName, routingKey string) error
+	PublishOnExchange(message []byte, exchange *ExchangeDeclare, routingKey string) error
 	SubscribeToQueue(queueName string, consumerName string, handleFunc func(delivery amqp.Delivery)) error
 }
 
@@ -52,15 +52,24 @@ func (client messageClient) PublishOnQueue(message []byte, queueName string) err
 	return err
 }
 
-func (client messageClient) PublishOnTopic(message []byte, exchangeName, routingKey string) error {
+func (client messageClient) PublishOnExchange(message []byte, exchange *ExchangeDeclare, routingKey string) error {
+	//err := client.channel.ExchangeDeclare(
+	//	exchangeName, // name
+	//	"topic",      // type
+	//	false,        // durable
+	//	false,        // auto-deleted
+	//	false,        // internal
+	//	false,        // no-wait
+	//	nil,          // arguments
+	//)
 	err := client.channel.ExchangeDeclare(
-		exchangeName, // name
-		"topic",      // type
-		false,        // durable
-		false,        // auto-deleted
-		false,        // internal
-		false,        // no-wait
-		nil,          // arguments
+		exchange.Name,       // name
+		exchange.Kind,       // type
+		exchange.Durable,    // durable
+		exchange.AutoDelete, // auto-deleted
+		exchange.Internal,   // internal
+		exchange.noWait,     // no-wait
+		nil,                 // arguments
 	)
 
 	if err != nil {
@@ -68,10 +77,10 @@ func (client messageClient) PublishOnTopic(message []byte, exchangeName, routing
 	}
 
 	err = client.channel.Publish(
-		exchangeName, // exchange
-		routingKey,   // routing key
-		false,        // mandatory
-		false,        // immediate
+		exchange.Name, // exchange
+		routingKey,    // routing key
+		false,         // mandatory
+		false,         // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        message,
