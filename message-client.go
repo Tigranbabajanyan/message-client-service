@@ -53,15 +53,6 @@ func (client messageClient) PublishOnQueue(message []byte, queueName string) err
 }
 
 func (client messageClient) PublishOnExchange(message []byte, exchange *ExchangeDeclare, routingKey string) error {
-	//err := client.channel.ExchangeDeclare(
-	//	exchangeName, // name
-	//	"topic",      // type
-	//	false,        // durable
-	//	false,        // auto-deleted
-	//	false,        // internal
-	//	false,        // no-wait
-	//	nil,          // arguments
-	//)
 	err := client.channel.ExchangeDeclare(
 		exchange.Name,       // name
 		exchange.Kind,       // type
@@ -90,8 +81,21 @@ func (client messageClient) PublishOnExchange(message []byte, exchange *Exchange
 }
 
 func (client messageClient) SubscribeToQueue(queueName string, consumerName string, handleFunc func(delivery amqp.Delivery)) error {
+	queue, err := client.channel.QueueDeclare(
+		queueName, // name
+		false,     // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
+	)
+
+	if err != nil {
+		return err
+	}
+
 	msgs, err := client.channel.Consume(
-		queueName,    // queue
+		queue.Name,   // queue
 		consumerName, // consumer
 		true,         // auto-ack
 		false,        // exclusive
